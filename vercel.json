@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/meta-interest",
-      "destination": "/index.js"
+      "destination": "/api/meta-interest"
     }
   ]
 }
