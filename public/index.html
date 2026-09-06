@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 30px 20px;
       background: #f5f7fa;
@@ -17,13 +17,13 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .subtitle {
       text-align: center;
       color: #666;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
     }
 
     .box {
@@ -39,7 +39,9 @@
       font-weight: bold;
     }
 
-    input, select, button {
+    input,
+    select,
+    button {
       width: 100%;
       padding: 12px;
       margin-bottom: 15px;
@@ -49,7 +51,7 @@
       font-size: 16px;
     }
 
-    button {
+    button.search-btn {
       background: #1877f2;
       color: white;
       border: none;
@@ -57,26 +59,54 @@
       font-weight: bold;
     }
 
-    button:hover {
+    button.search-btn:hover {
       background: #145db2;
     }
 
     .result {
       background: #f8f9fb;
-      padding: 15px;
-      margin-top: 12px;
-      border-radius: 8px;
+      padding: 18px;
+      margin-top: 14px;
+      border-radius: 10px;
       border-left: 4px solid #1877f2;
     }
 
     .name {
-      font-size: 18px;
+      font-size: 19px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .info {
+      margin: 7px 0;
+      color: #444;
+      word-break: break-word;
+    }
+
+    .label {
       font-weight: bold;
     }
 
-    .audience {
+    .copy-btn {
+      width: auto;
+      background: #eee;
+      color: #222;
+      border: 1px solid #ccc;
+      padding: 8px 12px;
+      margin-top: 8px;
+      margin-bottom: 0;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .copy-btn:hover {
+      background: #ddd;
+    }
+
+    .loading {
+      text-align: center;
+      margin-top: 15px;
       color: #555;
-      margin-top: 6px;
     }
 
     .error {
@@ -84,9 +114,16 @@
       margin-top: 15px;
     }
 
-    .loading {
+    .empty {
       text-align: center;
-      margin-top: 15px;
+      color: #666;
+      margin-top: 20px;
+    }
+
+    .success {
+      color: #168a16;
+      font-weight: bold;
+      margin-left: 8px;
     }
   </style>
 </head>
@@ -94,6 +131,7 @@
 <body>
 
   <h1>Facebook Ad Interest Finder</h1>
+
   <div class="subtitle">
     ค้นหา Facebook Ad Interests ผ่าน Facebook Graph API
   </div>
@@ -101,20 +139,23 @@
   <div class="box">
 
     <label for="keyword">คำค้นหา</label>
+
     <input
       type="text"
       id="keyword"
       placeholder="เช่น insurance, life insurance, car"
+      onkeydown="if(event.key === 'Enter') searchInterest()"
     >
 
     <label for="limit">จำนวนผลลัพธ์</label>
+
     <select id="limit">
       <option value="10">10 รายการ</option>
       <option value="20">20 รายการ</option>
       <option value="30">30 รายการ</option>
     </select>
 
-    <button onclick="searchInterest()">
+    <button class="search-btn" onclick="searchInterest()">
       🔎 ค้นหา Interest
     </button>
 
@@ -125,14 +166,23 @@
   </div>
 
   <script>
+
     async function searchInterest() {
 
-      const keyword = document.getElementById("keyword").value.trim();
-      const limit = document.getElementById("limit").value;
+      const keyword =
+        document.getElementById("keyword").value.trim();
 
-      const resultsDiv = document.getElementById("results");
-      const errorDiv = document.getElementById("error");
-      const loadingDiv = document.getElementById("loading");
+      const limit =
+        document.getElementById("limit").value;
+
+      const resultsDiv =
+        document.getElementById("results");
+
+      const errorDiv =
+        document.getElementById("error");
+
+      const loadingDiv =
+        document.getElementById("loading");
 
       resultsDiv.innerHTML = "";
       errorDiv.innerHTML = "";
@@ -150,42 +200,90 @@
           `/meta-interest?q=${encodeURIComponent(keyword)}&limit=${limit}`;
 
         const response = await fetch(url);
+
         const data = await response.json();
 
         loadingDiv.innerText = "";
 
         if (data.error) {
+
           errorDiv.innerText =
-            "เกิดข้อผิดพลาด: " + JSON.stringify(data.error);
+            "เกิดข้อผิดพลาด: " +
+            JSON.stringify(data.error);
+
           return;
         }
 
         if (!data.data || data.data.length === 0) {
+
           resultsDiv.innerHTML =
-            "<p>ไม่พบ Interest ที่ค้นหา</p>";
+            '<div class="empty">ไม่พบ Interest ที่ค้นหา</div>';
+
           return;
         }
 
         data.data.forEach(item => {
 
-          const name = item.name || "ไม่ระบุชื่อ";
+          const name =
+            item.name || "ไม่ระบุชื่อ";
 
-          const lower = item.audience_size_lower_bound;
-          const upper = item.audience_size_upper_bound;
+          const id =
+            item.id || "ไม่ระบุ ID";
 
-          let audience = "ไม่ทราบขนาดกลุ่มเป้าหมาย";
+          const path =
+            item.path && Array.isArray(item.path)
+              ? item.path.join(" › ")
+              : "ไม่ระบุหมวดหมู่";
 
-          if (lower && upper) {
+          const lower =
+            item.audience_size_lower_bound;
+
+          const upper =
+            item.audience_size_upper_bound;
+
+          let audience =
+            "ไม่ทราบขนาดกลุ่มเป้าหมาย";
+
+          if (lower != null && upper != null) {
+
             audience =
-              `👥 ${lower.toLocaleString()} – ${upper.toLocaleString()} คน`;
+              `${lower.toLocaleString()} – ${upper.toLocaleString()} คน`;
+
           }
 
-          const div = document.createElement("div");
+          const div =
+            document.createElement("div");
+
           div.className = "result";
 
           div.innerHTML = `
-            <div class="name">${name}</div>
-            <div class="audience">${audience}</div>
+
+            <div class="name">
+              ${escapeHtml(name)}
+            </div>
+
+            <div class="info">
+              <span class="label">🆔 Interest ID:</span>
+              ${escapeHtml(id)}
+            </div>
+
+            <div class="info">
+              <span class="label">📂 Path / หมวดหมู่:</span>
+              ${escapeHtml(path)}
+            </div>
+
+            <div class="info">
+              <span class="label">👥 Audience:</span>
+              ${audience}
+            </div>
+
+            <button
+              class="copy-btn"
+              onclick="copyInterest('${escapeAttribute(name)}', this)"
+            >
+              📋 คัดลอก Interest
+            </button>
+
           `;
 
           resultsDiv.appendChild(div);
@@ -197,11 +295,59 @@
         loadingDiv.innerText = "";
 
         errorDiv.innerText =
-          "ไม่สามารถเชื่อมต่อ API ได้: " + error.message;
+          "ไม่สามารถเชื่อมต่อ API ได้: " +
+          error.message;
 
       }
 
     }
+
+
+    function escapeHtml(text) {
+
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    }
+
+
+    function escapeAttribute(text) {
+
+      return String(text)
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'");
+
+    }
+
+
+    async function copyInterest(name, button) {
+
+      try {
+
+        await navigator.clipboard.writeText(name);
+
+        const oldText = button.innerText;
+
+        button.innerText = "✅ คัดลอกแล้ว";
+
+        setTimeout(() => {
+
+          button.innerText = oldText;
+
+        }, 1500);
+
+      } catch (error) {
+
+        alert("ไม่สามารถคัดลอกได้ กรุณาลองใหม่อีกครั้ง");
+
+      }
+
+    }
+
   </script>
 
 </body>
