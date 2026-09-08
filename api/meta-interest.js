@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     }
 
     const url =
-      "https://graph.facebook.com/v19.0/search" +
+      "https://graph.facebook.com/v25.0/search" +
       "?type=adinterest" +
       "&q=" + encodeURIComponent(q) +
       "&limit=" + encodeURIComponent(limit) +
