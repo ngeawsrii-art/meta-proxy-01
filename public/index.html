@@ -125,6 +125,27 @@
       font-weight: bold;
       margin-left: 8px;
     }
+
+    .action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.action-buttons button {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.secondary-btn {
+  background: #f0f0f0;
+  color: #222;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background: #e0e0e0;
+}
   </style>
 </head>
 
@@ -159,6 +180,24 @@
       🔎 ค้นหา Interest
     </button>
 
+<div class="action-buttons">
+
+  <button
+    class="secondary-btn"
+    onclick="copyAllInterests()"
+  >
+    📋 คัดลอกทั้งหมด
+  </button>
+
+  <button
+    class="secondary-btn"
+    onclick="exportCSV()"
+  >
+    📥 ดาวน์โหลด CSV
+  </button>
+
+</div>
+    
     <div id="loading" class="loading"></div>
     <div id="error" class="error"></div>
     <div id="results"></div>
@@ -166,6 +205,8 @@
   </div>
 
   <script>
+
+    let currentResults = [];
 
     async function searchInterest() {
 
@@ -221,6 +262,8 @@
 
           return;
         }
+
+        currentResults = data.data;
 
         data.data.forEach(item => {
 
@@ -302,6 +345,60 @@
 
     }
 
+    async function copyAllInterests() {
+
+  if (!currentResults.length) {
+    alert("กรุณาค้นหาก่อน");
+    return;
+  }
+
+  const text = currentResults
+    .map(item => item.name)
+    .join("\n");
+
+  await navigator.clipboard.writeText(text);
+
+  alert("คัดลอก Interest ทั้งหมดแล้ว");
+}
+
+
+function exportCSV() {
+
+  if (!currentResults.length) {
+    alert("กรุณาค้นหาก่อน");
+    return;
+  }
+
+  let csv =
+    "Interest,ID,Audience Low,Audience High\n";
+
+  currentResults.forEach(item => {
+
+    csv += `"${item.name || ""}",`;
+    csv += `"${item.id || ""}",`;
+    csv += `${item.audience_size_lower_bound || ""},`;
+    csv += `${item.audience_size_upper_bound || ""}\n`;
+
+  });
+
+  const blob =
+    new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+  link.download = "facebook-interests.csv";
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+}
 
     function escapeHtml(text) {
 
