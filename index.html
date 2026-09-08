@@ -41,7 +41,8 @@
 
     input,
     select,
-    button {
+    button,
+    textarea {
       width: 100%;
       padding: 12px;
       margin-bottom: 15px;
@@ -61,6 +62,51 @@
 
     button.search-btn:hover {
       background: #145db2;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .action-buttons button {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .secondary-btn {
+      background: #f0f0f0;
+      color: #222;
+      cursor: pointer;
+    }
+
+    .secondary-btn:hover {
+      background: #e0e0e0;
+    }
+
+    .ai-box {
+      margin-top: 25px;
+      padding: 20px;
+      background: #f8f9fb;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+    }
+
+    .ai-box h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .ai-box p {
+      color: #666;
+      margin-top: 0;
+    }
+
+    .ai-box textarea {
+      min-height: 100px;
+      font-family: Arial, sans-serif;
+      resize: vertical;
     }
 
     .result {
@@ -119,12 +165,6 @@
       color: #666;
       margin-top: 20px;
     }
-
-    .success {
-      color: #168a16;
-      font-weight: bold;
-      margin-left: 8px;
-    }
   </style>
 </head>
 
@@ -159,6 +199,49 @@
       🔎 ค้นหา Interest
     </button>
 
+    <div class="ai-box">
+
+      <h2>🤖 AI ช่วยแนะนำ Interest</h2>
+
+      <p>
+        บอกกลุ่มลูกค้าที่ต้องการ แล้ว AI จะช่วยแนะนำคำค้น Interest
+      </p>
+
+      <textarea
+        id="aiPrompt"
+        placeholder="เช่น คนอายุ 35-55 ปี สนใจประกันชีวิต วางแผนมรดก และต้องการความมั่นคงให้ครอบครัว"
+      ></textarea>
+
+      <button
+        class="search-btn"
+        onclick="getAIInterests()"
+      >
+        🤖 ให้ AI แนะนำ Interest
+      </button>
+
+      <div id="aiLoading" class="loading"></div>
+      <div id="aiResult"></div>
+
+    </div>
+
+    <div class="action-buttons">
+
+      <button
+        class="secondary-btn"
+        onclick="copyAllInterests()"
+      >
+        📋 คัดลอกทั้งหมด
+      </button>
+
+      <button
+        class="secondary-btn"
+        onclick="exportCSV()"
+      >
+        📥 ดาวน์โหลด CSV
+      </button>
+
+    </div>
+
     <div id="loading" class="loading"></div>
     <div id="error" class="error"></div>
     <div id="results"></div>
@@ -166,6 +249,9 @@
   </div>
 
   <script>
+
+    let currentResults = [];
+
 
     async function searchInterest() {
 
@@ -216,11 +302,15 @@
 
         if (!data.data || data.data.length === 0) {
 
+          currentResults = [];
+
           resultsDiv.innerHTML =
             '<div class="empty">ไม่พบ Interest ที่ค้นหา</div>';
 
           return;
         }
+
+        currentResults = data.data;
 
         data.data.forEach(item => {
 
@@ -303,23 +393,113 @@
     }
 
 
-    function escapeHtml(text) {
+    async function getAIInterests() {
 
-      return String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+      const prompt =
+        document.getElementById("aiPrompt").value.trim();
 
-    }
+      const resultDiv =
+        document.getElementById("aiResult");
 
+      const loadingDiv =
+        document.getElementById("aiLoading");
 
-    function escapeAttribute(text) {
+      resultDiv.innerHTML = "";
+      loadingDiv.innerText = "";
 
-      return String(text)
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "\\'");
+      if (!prompt) {
+
+        resultDiv.innerHTML =
+          '<div class="error">กรุณาบอกกลุ่มลูกค้าที่ต้องการ</div>';
+
+        return;
+      }
+
+      loadingDiv.innerText =
+        "🤖 AI กำลังวิเคราะห์กลุ่มเป้าหมาย...";
+
+      try {
+
+        const response =
+          await fetch("/api/gemini", {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+
+              prompt:
+                `คุณเป็นผู้เชี่ยวชาญด้าน Facebook Ads Interest Targeting
+
+ผู้ใช้ต้องการค้นหากลุ่มเป้าหมาย:
+${prompt}
+
+ช่วยแนะนำคำค้น Facebook Ad Interest จำนวน 10 คำ
+ที่เกี่ยวข้องและนำไปใช้ค้นหาในระบบ Facebook Ad Interest Finder ได้
+
+ตอบเป็นรายการชื่อ Interest เท่านั้น
+ไม่ต้องใส่คำอธิบายเพิ่มเติม
+แต่ละ Interest ให้ขึ้นบรรทัดใหม่`
+
+            })
+
+          });
+
+        const data =
+          await response.json();
+
+        loadingDiv.innerText = "";
+
+        if (!response.ok || data.error) {
+
+          resultDiv.innerHTML =
+            '<div class="error">ไม่สามารถเรียก AI ได้: ' +
+            escapeHtml(JSON.stringify(data.error)) +
+            '</div>';
+
+          return;
+        }
+
+        const text =
+          data.text || "";
+
+        if (!text) {
+
+          resultDiv.innerHTML =
+            '<div class="empty">AI ไม่ได้ส่งผลลัพธ์กลับมา</div>';
+
+          return;
+        }
+
+        resultDiv.innerHTML = `
+
+          <div class="result">
+
+            <div class="name">
+              💡 Interest ที่ AI แนะนำ
+            </div>
+
+            <div class="info">
+              ${escapeHtml(text).replace(/\n/g, "<br>")}
+            </div>
+
+          </div>
+
+        `;
+
+      } catch (error) {
+
+        loadingDiv.innerText = "";
+
+        resultDiv.innerHTML =
+          '<div class="error">เกิดข้อผิดพลาด: ' +
+          escapeHtml(error.message) +
+          '</div>';
+
+      }
 
     }
 
@@ -330,25 +510,15 @@
 
         await navigator.clipboard.writeText(name);
 
-        const oldText = button.innerText;
+        const oldText =
+          button.innerText;
 
-        button.innerText = "✅ คัดลอกแล้ว";
+        button.innerText =
+          "✅ คัดลอกแล้ว";
 
-        setTimeout(() => {
+        setTimeout
 
-          button.innerText = oldText;
-
-        }, 1500);
-
-      } catch (error) {
-
-        alert("ไม่สามารถคัดลอกได้ กรุณาลองใหม่อีกครั้ง");
-
-      }
-
-    }
-
-  </script>
+      </script>
 
 </body>
 </html>
