@@ -484,32 +484,74 @@ ${prompt}
           return;
         }
 
-        const text =
-          data.text || "";
+        let text =
+  data.text || "";
 
-        if (!text) {
+if (!text) {
 
-          resultDiv.innerHTML =
-            '<div class="empty">AI ไม่ได้ส่งผลลัพธ์กลับมา</div>';
+  resultDiv.innerHTML =
+    '<div class="empty">AI ไม่ได้ส่งผลลัพธ์กลับมา</div>';
 
-          return;
-        }
+  return;
+}
 
-        resultDiv.innerHTML = `
+// กรองสิ่งที่ไม่ใช่ Interest ออก
+const forbiddenWords = [
+  "ประเทศไทย",
+  "ไทย",
+  "Thailand",
+  "กรุงเทพ",
+  "Bangkok",
+  "พังงา",
+  "Phang Nga",
+  "ภูเก็ต",
+  "Phuket",
+  "จังหวัด",
+  "ประเทศ",
+  "อำเภอ",
+  "เมือง",
+  "สถานที่",
+  "Location"
+];
 
-          <div class="result">
+const interests = text
+  .split(/\r?\n/)
+  .map(item => item
+    .replace(/^[-•*\d.)]+\s*/, "")
+    .trim()
+  )
+  .filter(item => item.length > 0)
+  .filter(item =>
+    !forbiddenWords.some(word =>
+      item.toLowerCase().includes(word.toLowerCase())
+    )
+  );
 
-            <div class="name">
-              💡 Interest ที่ AI แนะนำ
-            </div>
+if (interests.length === 0) {
 
-            <div class="info">
-              ${escapeHtml(text).replace(/\n/g, "<br>")}
-            </div>
+  resultDiv.innerHTML =
+    '<div class="empty">AI ไม่พบ Interest ที่เหมาะสม</div>';
 
-          </div>
+  return;
+}
 
-        `;
+resultDiv.innerHTML = `
+
+  <div class="result">
+
+    <div class="name">
+      💡 Interest ที่ AI แนะนำ
+    </div>
+
+    <div class="info">
+      ${interests
+        .map(item => escapeHtml(item))
+        .join("<br>")}
+    </div>
+
+  </div>
+
+`;
 
       } catch (error) {
 
