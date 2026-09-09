@@ -41,7 +41,8 @@
 
     input,
     select,
-    button {
+    button,
+    textarea {
       width: 100%;
       padding: 12px;
       margin-bottom: 15px;
@@ -61,6 +62,51 @@
 
     button.search-btn:hover {
       background: #145db2;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .action-buttons button {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .secondary-btn {
+      background: #f0f0f0;
+      color: #222;
+      cursor: pointer;
+    }
+
+    .secondary-btn:hover {
+      background: #e0e0e0;
+    }
+
+    .ai-box {
+      margin-top: 25px;
+      padding: 20px;
+      background: #f8f9fb;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+    }
+
+    .ai-box h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .ai-box p {
+      color: #666;
+      margin-top: 0;
+    }
+
+    .ai-box textarea {
+      min-height: 100px;
+      font-family: Arial, sans-serif;
+      resize: vertical;
     }
 
     .result {
@@ -119,33 +165,6 @@
       color: #666;
       margin-top: 20px;
     }
-
-    .success {
-      color: #168a16;
-      font-weight: bold;
-      margin-left: 8px;
-    }
-
-    .action-buttons {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.action-buttons button {
-  flex: 1;
-  margin-bottom: 0;
-}
-
-.secondary-btn {
-  background: #f0f0f0;
-  color: #222;
-  cursor: pointer;
-}
-
-.secondary-btn:hover {
-  background: #e0e0e0;
-}
   </style>
 </head>
 
@@ -180,24 +199,49 @@
       🔎 ค้นหา Interest
     </button>
 
-<div class="action-buttons">
+    <div class="ai-box">
 
-  <button
-    class="secondary-btn"
-    onclick="copyAllInterests()"
-  >
-    📋 คัดลอกทั้งหมด
-  </button>
+      <h2>🤖 AI ช่วยแนะนำ Interest</h2>
 
-  <button
-    class="secondary-btn"
-    onclick="exportCSV()"
-  >
-    📥 ดาวน์โหลด CSV
-  </button>
+      <p>
+        บอกกลุ่มลูกค้าที่ต้องการ แล้ว AI จะช่วยแนะนำคำค้น Interest
+      </p>
 
-</div>
-    
+      <textarea
+        id="aiPrompt"
+        placeholder="เช่น คนอายุ 35-55 ปี สนใจประกันชีวิต วางแผนมรดก และต้องการความมั่นคงให้ครอบครัว"
+      ></textarea>
+
+      <button
+        class="search-btn"
+        onclick="getAIInterests()"
+      >
+        🤖 ให้ AI แนะนำ Interest
+      </button>
+
+      <div id="aiLoading" class="loading"></div>
+      <div id="aiResult"></div>
+
+    </div>
+
+    <div class="action-buttons">
+
+      <button
+        class="secondary-btn"
+        onclick="copyAllInterests()"
+      >
+        📋 คัดลอกทั้งหมด
+      </button>
+
+      <button
+        class="secondary-btn"
+        onclick="exportCSV()"
+      >
+        📥 ดาวน์โหลด CSV
+      </button>
+
+    </div>
+
     <div id="loading" class="loading"></div>
     <div id="error" class="error"></div>
     <div id="results"></div>
@@ -207,6 +251,7 @@
   <script>
 
     let currentResults = [];
+
 
     async function searchInterest() {
 
@@ -256,6 +301,8 @@
         }
 
         if (!data.data || data.data.length === 0) {
+
+          currentResults = [];
 
           resultsDiv.innerHTML =
             '<div class="empty">ไม่พบ Interest ที่ค้นหา</div>';
@@ -345,44 +392,265 @@
 
     }
 
-    async function copyAllInterests() {
+    async function getAIInterests() {
 
-  if (!currentResults.length) {
-    alert("กรุณาค้นหาก่อน");
+  const prompt =
+    document.getElementById("keyword").value.trim();
+
+  const resultDiv =
+    document.getElementById("results");
+
+  if (!prompt) {
+    alert("กรุณาพิมพ์คำค้นหาก่อน");
     return;
   }
 
-  const text = currentResults
+  resultDiv.innerHTML =
+    '<div class="loading">🤖 AI กำลังวิเคราะห์...</div>';
+
+  try {
+
+    const response = await fetch("/api/gemini", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+
+        prompt: `
+คุณเป็นผู้ช่วยแนะนำ Facebook Ad Interest
+
+คำค้นหาของผู้ใช้:
+${prompt}
+
+ธุรกิจที่รองรับ:
+- ประกันชีวิต
+- ประกันอุบัติเหตุครอบครัว
+- ประกันรถยนต์
+- รีไฟแนนซ์รถ
+- สินเชื่อรถ
+
+งาน:
+แนะนำ Facebook Ad Interest ที่เกี่ยวข้องกับคำค้นหานี้ จำนวนไม่เกิน 10 รายการ
+
+กฎสำคัญ:
+- ตอบเฉพาะชื่อ Interest
+- 1 Interest ต่อ 1 บรรทัด
+- ห้ามใส่ตัวเลข
+- ห้ามใส่ bullet
+- ห้ามใส่คำอธิบาย
+- ห้ามใส่เหตุผล
+- ห้ามใส่ประเทศ จังหวัด เมือง หรือสถานที่
+- ห้ามใส่อายุ เพศ หรืออาชีพ
+- ห้ามตอบ "ประเทศไทย"
+- ห้ามตอบ "Thailand"
+- ห้ามตอบ "กรุงเทพ"
+- ห้ามตอบ "พังงา"
+- ห้ามตอบ "ภูเก็ต"
+
+หากไม่แน่ใจว่าเป็น Facebook Ad Interest ที่เหมาะสม
+ให้ตัดรายการนั้นออก
+
+ตอบเฉพาะรายชื่อ Interest เท่านั้น
+        `
+
+      })
+
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+
+      resultDiv.innerHTML =
+        '<div class="error">เกิดข้อผิดพลาด: ' +
+        escapeHtml(JSON.stringify(data.error)) +
+        '</div>';
+
+      return;
+    }
+
+    const text = data.text || "";
+
+    if (!text) {
+
+      resultDiv.innerHTML =
+        '<div class="empty">AI ไม่พบ Interest</div>';
+
+      return;
+    }
+
+    const forbiddenWords = [
+      "ประเทศไทย",
+      "ไทย",
+      "Thailand",
+      "กรุงเทพ",
+      "Bangkok",
+      "พังงา",
+      "Phang Nga",
+      "ภูเก็ต",
+      "Phuket",
+      "จังหวัด",
+      "ประเทศ",
+      "อำเภอ",
+      "เมือง",
+      "สถานที่",
+      "Location"
+    ];
+
+    const interests = text
+      .split(/\r?\n/)
+      .map(item =>
+        item
+          .replace(/^[-•*\d.)]+\s*/, "")
+          .trim()
+      )
+      .filter(item => item.length > 0)
+      .filter(item =>
+        !forbiddenWords.some(word =>
+          item.toLowerCase().includes(word.toLowerCase())
+        )
+      );
+
+    if (interests.length === 0) {
+
+      resultDiv.innerHTML =
+        '<div class="empty">AI ไม่พบ Interest ที่เหมาะสม</div>';
+
+      return;
+    }
+
+    resultDiv.innerHTML = `
+      <div class="result">
+        <div class="name">
+          🤖 Interest ที่ AI แนะนำ
+        </div>
+
+        <div class="info">
+          ${interests
+            .map(item => escapeHtml(item))
+            .join("<br>")}
+        </div>
+      </div>
+    `;
+
+  } catch (error) {
+
+    resultDiv.innerHTML =
+      '<div class="error">เกิดข้อผิดพลาด: ' +
+      escapeHtml(error.message) +
+      '</div>';
+
+  }
+
+}
+
+       
+    async function copyInterest(name, button) {
+
+  try {
+
+    await navigator.clipboard.writeText(name);
+
+    const oldText = button.innerText;
+
+    button.innerText = "✅ คัดลอกแล้ว";
+
+    setTimeout(() => {
+      button.innerText = oldText;
+    }, 1500);
+
+  } catch (error) {
+
+    alert("ไม่สามารถคัดลอกได้");
+
+  }
+
+}
+
+
+function copyAllInterests() {
+
+  if (!currentResults || currentResults.length === 0) {
+
+    alert("ยังไม่มี Interest ให้คัดลอก");
+
+    return;
+
+  }
+
+  const names = currentResults
     .map(item => item.name)
-    .join("\n");
+    .filter(Boolean);
 
-  await navigator.clipboard.writeText(text);
+  navigator.clipboard.writeText(names.join("\n"))
+    .then(() => {
+      alert("✅ คัดลอก Interest ทั้งหมดแล้ว");
+    })
+    .catch(() => {
+      alert("ไม่สามารถคัดลอกได้");
+    });
 
-  alert("คัดลอก Interest ทั้งหมดแล้ว");
 }
 
 
 function exportCSV() {
 
-  if (!currentResults.length) {
-    alert("กรุณาค้นหาก่อน");
+  if (!currentResults || currentResults.length === 0) {
+
+    alert("ยังไม่มีข้อมูลให้ดาวน์โหลด");
+
     return;
+
   }
 
-  let csv =
-    "Interest,ID,Audience Low,Audience High\n";
+  const header =
+    "Interest ID,Interest Name,Path,Audience Lower,Audience Upper";
 
-  currentResults.forEach(item => {
+  const rows = currentResults.map(item => {
 
-    csv += `"${item.name || ""}",`;
-    csv += `"${item.id || ""}",`;
-    csv += `${item.audience_size_lower_bound || ""},`;
-    csv += `${item.audience_size_upper_bound || ""}\n`;
+    const id = item.id || "";
+
+    const name = item.name || "";
+
+    const path =
+      item.path && Array.isArray(item.path)
+        ? item.path.join(" > ")
+        : "";
+
+    const lower =
+      item.audience_size_lower_bound ?? "";
+
+    const upper =
+      item.audience_size_upper_bound ?? "";
+
+    return [
+      id,
+      name,
+      path,
+      lower,
+      upper
+    ]
+      .map(value =>
+        "${String(value).replace(/"/g, '""')}"
+      )
+      .join(",");
 
   });
 
+  const csv =
+    "\uFEFF" +
+    header +
+    "\n" +
+    rows.join("\n");
+
   const blob =
-    new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    new Blob([csv], {
+      type: "text/csv;charset=utf-8;"
+    });
 
   const url =
     URL.createObjectURL(blob);
@@ -391,61 +659,42 @@ function exportCSV() {
     document.createElement("a");
 
   link.href = url;
-  link.download = "facebook-interests.csv";
+
+  link.download =
+    "facebook-interest-results.csv";
 
   document.body.appendChild(link);
 
   link.click();
 
   document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+
 }
 
-    function escapeHtml(text) {
 
-      return String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+function escapeHtml(value) {
 
-    }
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
-
-    function escapeAttribute(text) {
-
-      return String(text)
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "\\'");
-
-    }
+}
 
 
-    async function copyInterest(name, button) {
+function escapeAttribute(value) {
 
-      try {
+  return String(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, "&quot;");
 
-        await navigator.clipboard.writeText(name);
-
-        const oldText = button.innerText;
-
-        button.innerText = "✅ คัดลอกแล้ว";
-
-        setTimeout(() => {
-
-          button.innerText = oldText;
-
-        }, 1500);
-
-      } catch (error) {
-
-        alert("ไม่สามารถคัดลอกได้ กรุณาลองใหม่อีกครั้ง");
-
-      }
-
-    }
-
-  </script>
+}
+      </script>
 
 </body>
 </html>
