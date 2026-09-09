@@ -516,16 +516,37 @@ const forbiddenWords = [
 
 const interests = text
   .split(/\r?\n/)
-  .map(item => item
-    .replace(/^[-•*\d.)]+\s*/, "")
-    .trim()
+  .map(item =>
+    item
+      .replace(/^[-•*\d.)]+\s*/, "")
+      .trim()
   )
   .filter(item => item.length > 0)
-  .filter(item =>
-    !forbiddenWords.some(word =>
-      item.toLowerCase().includes(word.toLowerCase())
-    )
-  );
+  .filter(item => {
+    const lower = item.toLowerCase();
+
+    // ตัด Location / สถานที่ออกโดยเด็ดขาด
+    if (
+      lower.includes("ประเทศไทย") ||
+      lower.includes("ไทย") ||
+      lower.includes("thailand") ||
+      lower.includes("กรุงเทพ") ||
+      lower.includes("bangkok") ||
+      lower.includes("พังงา") ||
+      lower.includes("phang nga") ||
+      lower.includes("ภูเก็ต") ||
+      lower.includes("phuket") ||
+      lower.includes("สถานที่") ||
+      lower.includes("location") ||
+      lower.includes("จังหวัด") ||
+      lower.includes("ประเทศ") ||
+      lower.includes("อำเภอ")
+    ) {
+      return false;
+    }
+
+    return true;
+  });
 
 if (interests.length === 0) {
 
