@@ -213,11 +213,12 @@
       ></textarea>
 
       <button
-        class="search-btn"
-        onclick="testAIButton()"
-      >
-        🤖 ให้ AI แนะนำ Interest
-      </button>
+  type="button"
+  class="search-btn"
+  id="aiButton"
+>
+  🤖 ให้ AI แนะนำ Interest
+</button>
 
       <div id="aiLoading" class="loading"></div>
       <div id="aiResult"></div>
@@ -251,6 +252,23 @@
   <script>
 
     let currentResults = [];
+
+document.getElementById("aiButton").addEventListener("click", function () {
+  const prompt = document.getElementById("aiPrompt").value.trim();
+  const resultDiv = document.getElementById("aiResult");
+
+  if (!prompt) {
+    resultDiv.innerHTML =
+      '<div class="error">กรุณาพิมพ์กลุ่มลูกค้าที่ต้องการก่อน</div>';
+    return;
+  }
+
+  resultDiv.innerHTML =
+    '<div class="result"><div class="name">✅ ปุ่ม AI ทำงานแล้ว</div><div class="info">กำลังเตรียมส่งคำถามไปยัง AI...</div></div>';
+});
+
+
+    
 function testAIButton() {
   document.getElementById("aiResult").innerHTML =
     '<div class="result"><div class="name">✅ JavaScript ทำงานแล้ว</div></div>';
