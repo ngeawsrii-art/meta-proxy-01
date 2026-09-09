@@ -49,9 +49,42 @@ export default async function handler(req, res) {
     const text =
       data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
+    const forbiddenWords = [
+  "ประเทศไทย",
+  "ไทย",
+  "Thailand",
+  "กรุงเทพ",
+  "Bangkok",
+  "พังงา",
+  "Phang Nga",
+  "ภูเก็ต",
+  "Phuket",
+  "จังหวัด",
+  "ประเทศ",
+  "อำเภอ",
+  "เมือง",
+  "สถานที่",
+  "Location"
+];
+
+const filteredText = text
+  .split(/\r?\n/)
+  .map(item =>
+    item
+      .replace(/^[-•*\d.)]+\s*/, "")
+      .trim()
+  )
+  .filter(item => item.length > 0)
+  .filter(item =>
+    !forbiddenWords.some(word =>
+      item.toLowerCase().includes(word.toLowerCase())
+    )
+  )
+  .join("\n");
+
     return res.status(200).json({
-      text
-    });
+  text: filteredText
+});
 
   } catch (error) {
     return res.status(500).json({
