@@ -569,18 +569,149 @@ resultDiv.innerHTML = `
 
     async function copyInterest(name, button) {
 
-      try {
+  try {
 
-        await navigator.clipboard.writeText(name);
+    await navigator.clipboard.writeText(name);
 
-        const oldText =
-          button.innerText;
+    const oldText = button.innerText;
 
-        button.innerText =
-          "✅ คัดลอกแล้ว";
+    button.innerText = "✅ คัดลอกแล้ว";
 
-        setTimeout
+    setTimeout(() => {
+      button.innerText = oldText;
+    }, 1500);
 
+  } catch (error) {
+
+    alert("ไม่สามารถคัดลอกได้");
+
+  }
+
+}
+
+
+function copyAllInterests() {
+
+  if (!currentResults || currentResults.length === 0) {
+
+    alert("ยังไม่มี Interest ให้คัดลอก");
+
+    return;
+
+  }
+
+  const names = currentResults
+    .map(item => item.name)
+    .filter(Boolean);
+
+  navigator.clipboard.writeText(names.join("\n"))
+    .then(() => {
+      alert("✅ คัดลอก Interest ทั้งหมดแล้ว");
+    })
+    .catch(() => {
+      alert("ไม่สามารถคัดลอกได้");
+    });
+
+}
+
+
+function exportCSV() {
+
+  if (!currentResults || currentResults.length === 0) {
+
+    alert("ยังไม่มีข้อมูลให้ดาวน์โหลด");
+
+    return;
+
+  }
+
+  const header =
+    "Interest ID,Interest Name,Path,Audience Lower,Audience Upper";
+
+  const rows = currentResults.map(item => {
+
+    const id = item.id || "";
+
+    const name = item.name || "";
+
+    const path =
+      item.path && Array.isArray(item.path)
+        ? item.path.join(" > ")
+        : "";
+
+    const lower =
+      item.audience_size_lower_bound ?? "";
+
+    const upper =
+      item.audience_size_upper_bound ?? "";
+
+    return [
+      id,
+      name,
+      path,
+      lower,
+      upper
+    ]
+      .map(value =>
+        "${String(value).replace(/"/g, '""')}"
+      )
+      .join(",");
+
+  });
+
+  const csv =
+    "\uFEFF" +
+    header +
+    "\n" +
+    rows.join("\n");
+
+  const blob =
+    new Blob([csv], {
+      type: "text/csv;charset=utf-8;"
+    });
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+
+  link.download =
+    "facebook-interest-results.csv";
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+
+}
+
+
+function escapeHtml(value) {
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
+
+
+function escapeAttribute(value) {
+
+  return String(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, "&quot;");
+
+}
       </script>
 
 </body>
