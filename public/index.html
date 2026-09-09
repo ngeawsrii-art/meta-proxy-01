@@ -214,7 +214,7 @@
 
       <button
         class="search-btn"
-        onclick="getAIInterests()"
+        onclick="testAIButton()"
       >
         🤖 ให้ AI แนะนำ Interest
       </button>
@@ -251,7 +251,10 @@
   <script>
 
     let currentResults = [];
-
+function testAIButton() {
+  document.getElementById("aiResult").innerHTML =
+    '<div class="result"><div class="name">✅ JavaScript ทำงานแล้ว</div></div>';
+}
 
     async function searchInterest() {
 
