@@ -199,10 +199,6 @@
       🔎 ค้นหา Interest
     </button>
 
-    <button class="search-btn" onclick="getAIInterests()">
-  🤖 ให้ AI แนะนำ Interest
-</button>
-
     <div class="ai-box">
 
       <h2>🤖 AI ช่วยแนะนำ Interest</h2>
@@ -396,235 +392,163 @@
 
     }
 
-
     async function getAIInterests() {
 
-      const prompt =
-        document.getElementById("aiPrompt").value.trim();
+  const prompt =
+    document.getElementById("keyword").value.trim();
 
-      const resultDiv =
-        document.getElementById("aiResult");
+  const resultDiv =
+    document.getElementById("results");
 
-      const loadingDiv =
-        document.getElementById("aiLoading");
+  if (!prompt) {
+    alert("กรุณาพิมพ์คำค้นหาก่อน");
+    return;
+  }
 
-      resultDiv.innerHTML = "";
-      loadingDiv.innerText = "";
+  resultDiv.innerHTML =
+    '<div class="loading">🤖 AI กำลังวิเคราะห์...</div>';
 
-      if (!prompt) {
+  try {
 
-        resultDiv.innerHTML =
-          '<div class="error">กรุณาบอกกลุ่มลูกค้าที่ต้องการ</div>';
+    const response = await fetch("/api/gemini", {
 
-        return;
-      }
+      method: "POST",
 
-      loadingDiv.innerText =
-        "🤖 AI กำลังวิเคราะห์กลุ่มเป้าหมาย...";
+      headers: {
+        "Content-Type": "application/json"
+      },
 
-      try {
+      body: JSON.stringify({
 
-        const response =
-          await fetch("/api/gemini", {
-
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-
-              prompt:
-                `คุณเป็นเครื่องมือค้นหา Facebook Ad Interest เท่านั้น
+        prompt: `
+คุณเป็นผู้ช่วยแนะนำ Facebook Ad Interest
 
 คำค้นหาของผู้ใช้:
 ${prompt}
 
-งานของคุณ:
-สร้างรายชื่อ Facebook Ad Interest ที่เกี่ยวข้องกับคำค้นหานี้ จำนวน 10 รายการ
+ธุรกิจที่รองรับ:
+- ประกันชีวิต
+- ประกันอุบัติเหตุครอบครัว
+- ประกันรถยนต์
+- รีไฟแนนซ์รถ
+- สินเชื่อรถ
 
-สำคัญมาก:
-ผลลัพธ์ทุกบรรทัดต้องเป็น "Interest" เท่านั้น
-ต้องเป็นชื่อของความสนใจ สินค้า บริการ แบรนด์ งานอดิเรก พฤติกรรม หรือไลฟ์สไตล์ที่สามารถใช้เป็น Facebook Ad Interest ได้
+งาน:
+แนะนำ Facebook Ad Interest ที่เกี่ยวข้องกับคำค้นหานี้ จำนวนไม่เกิน 10 รายการ
 
-ห้ามส่งสิ่งต่อไปนี้โดยเด็ดขาด:
-- ประเทศ
-- จังหวัด
-- อำเภอ
-- เมือง
-- ภูมิภาค
-- สถานที่
-- Location
-- อายุ
-- เพศ
-- อาชีพ
-- กลุ่มประชากร
-- ชื่อกลุ่มเป้าหมายทั่วไป
-- คำอธิบาย
-- เหตุผล
-- ประโยคอื่นใดนอกจากชื่อ Interest
+กฎสำคัญ:
+- ตอบเฉพาะชื่อ Interest
+- 1 Interest ต่อ 1 บรรทัด
+- ห้ามใส่ตัวเลข
+- ห้ามใส่ bullet
+- ห้ามใส่คำอธิบาย
+- ห้ามใส่เหตุผล
+- ห้ามใส่ประเทศ จังหวัด เมือง หรือสถานที่
+- ห้ามใส่อายุ เพศ หรืออาชีพ
+- ห้ามตอบ "ประเทศไทย"
+- ห้ามตอบ "Thailand"
+- ห้ามตอบ "กรุงเทพ"
+- ห้ามตอบ "พังงา"
+- ห้ามตอบ "ภูเก็ต"
 
-ตัวอย่างสิ่งที่ห้ามตอบ:
-ประเทศไทย
-ประเทศไทย (สถานที่)
-Thailand
-กรุงเทพ
-กรุงเทพมหานคร
-Bangkok
-พังงา
-Phang Nga
-ภูเก็ต
-Phuket
-จังหวัด
-ประเทศ
-เมือง
-สถานที่
-Location
+หากไม่แน่ใจว่าเป็น Facebook Ad Interest ที่เหมาะสม
+ให้ตัดรายการนั้นออก
 
-ธุรกิจที่สามารถใช้เป็นบริบทในการแนะนำ ได้แก่:
-ประกันชีวิต
-ประกันอุบัติเหตุครอบครัว
-ประกันรถยนต์
-รีไฟแนนซ์รถ
-สินเชื่อรถ
+ตอบเฉพาะรายชื่อ Interest เท่านั้น
+        `
 
-หากไม่แน่ใจว่าสิ่งใดเป็น Facebook Ad Interest จริง
-ให้ตัดสิ่งนั้นออก ห้ามเดาขึ้นมา
+      })
 
-ตอบเฉพาะชื่อ Interest
-หนึ่ง Interest ต่อหนึ่งบรรทัด
-ไม่ใส่ตัวเลข
-ไม่ใส่ bullet
-ไม่ใส่เครื่องหมายคำพูด
-ไม่ใส่คำอธิบาย`
-            })
+    });
 
-          });
+    const data = await response.json();
 
-        const data =
-          await response.json();
+    if (!response.ok || data.error) {
 
-        loadingDiv.innerText = "";
+      resultDiv.innerHTML =
+        '<div class="error">เกิดข้อผิดพลาด: ' +
+        escapeHtml(JSON.stringify(data.error)) +
+        '</div>';
 
-        if (!response.ok || data.error) {
+      return;
+    }
 
-          resultDiv.innerHTML =
-            '<div class="error">ไม่สามารถเรียก AI ได้: ' +
-            escapeHtml(JSON.stringify(data.error)) +
-            '</div>';
+    const text = data.text || "";
 
-          return;
-        }
+    if (!text) {
 
-        let text =
-  data.text || "";
+      resultDiv.innerHTML =
+        '<div class="empty">AI ไม่พบ Interest</div>';
 
-console.log("AI RAW RESULT:", text);
+      return;
+    }
 
-if (!text) {
+    const forbiddenWords = [
+      "ประเทศไทย",
+      "ไทย",
+      "Thailand",
+      "กรุงเทพ",
+      "Bangkok",
+      "พังงา",
+      "Phang Nga",
+      "ภูเก็ต",
+      "Phuket",
+      "จังหวัด",
+      "ประเทศ",
+      "อำเภอ",
+      "เมือง",
+      "สถานที่",
+      "Location"
+    ];
 
-  resultDiv.innerHTML =
-    '<div class="empty">AI ไม่ได้ส่งผลลัพธ์กลับมา</div>';
+    const interests = text
+      .split(/\r?\n/)
+      .map(item =>
+        item
+          .replace(/^[-•*\d.)]+\s*/, "")
+          .trim()
+      )
+      .filter(item => item.length > 0)
+      .filter(item =>
+        !forbiddenWords.some(word =>
+          item.toLowerCase().includes(word.toLowerCase())
+        )
+      );
 
-  return;
+    if (interests.length === 0) {
+
+      resultDiv.innerHTML =
+        '<div class="empty">AI ไม่พบ Interest ที่เหมาะสม</div>';
+
+      return;
+    }
+
+    resultDiv.innerHTML = `
+      <div class="result">
+        <div class="name">
+          🤖 Interest ที่ AI แนะนำ
+        </div>
+
+        <div class="info">
+          ${interests
+            .map(item => escapeHtml(item))
+            .join("<br>")}
+        </div>
+      </div>
+    `;
+
+  } catch (error) {
+
+    resultDiv.innerHTML =
+      '<div class="error">เกิดข้อผิดพลาด: ' +
+      escapeHtml(error.message) +
+      '</div>';
+
+  }
+
 }
 
-// กรองสิ่งที่ไม่ใช่ Interest ออก
-const forbiddenWords = [
-  "ประเทศไทย",
-  "ไทย",
-  "Thailand",
-  "กรุงเทพ",
-  "Bangkok",
-  "พังงา",
-  "Phang Nga",
-  "ภูเก็ต",
-  "Phuket",
-  "จังหวัด",
-  "ประเทศ",
-  "อำเภอ",
-  "เมือง",
-  "สถานที่",
-  "Location"
-];
-
-const interests = text
-  .split(/\r?\n/)
-  .map(item =>
-    item
-      .replace(/^[-•*\d.)]+\s*/, "")
-      .trim()
-  )
-  .filter(item => item.length > 0)
-  .filter(item => {
-    // ตัดรายการที่เป็น Location ออกโดยเด็ดขาด
-    if (/\(สถานที่\)/i.test(item)) {
-      return false;
-    }
-
-    if (/\b(location|thailand|bangkok|phang nga|phuket)\b/i.test(item)) {
-      return false;
-    }
-
-    if (
-      item.includes("ประเทศไทย") ||
-      item.includes("ประเทศไทย") ||
-      item.includes("กรุงเทพ") ||
-      item.includes("พังงา") ||
-      item.includes("ภูเก็ต") ||
-      item.includes("จังหวัด") ||
-      item.includes("ประเทศ") ||
-      item.includes("อำเภอ") ||
-      item.includes("สถานที่") ||
-      item.includes("เมือง")
-    ) {
-      return false;
-    }
-
-    return true;
-  });
-        
-if (interests.length === 0) {
-
-  resultDiv.innerHTML =
-    '<div class="empty">AI ไม่พบ Interest ที่เหมาะสม</div>';
-
-  return;
-}
-
-resultDiv.innerHTML = `
-
-  <div class="result">
-
-    <div class="name">
-      💡 Interest ที่ AI แนะนำ
-    </div>
-
-    <div class="info">
-      ${interests
-        .map(item => escapeHtml(item))
-        .join("<br>")}
-    </div>
-
-  </div>
-
-`;
-
-      } catch (error) {
-
-        loadingDiv.innerText = "";
-
-        resultDiv.innerHTML =
-          '<div class="error">เกิดข้อผิดพลาด: ' +
-          escapeHtml(error.message) +
-          '</div>';
-
-      }
-
-    }
-
-
+       
     async function copyInterest(name, button) {
 
   try {
