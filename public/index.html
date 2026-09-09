@@ -253,26 +253,8 @@
 
     let currentResults = [];
 
-document.getElementById("aiButton").addEventListener("click", function () {
-  const prompt = document.getElementById("aiPrompt").value.trim();
-  const resultDiv = document.getElementById("aiResult");
-
-  if (!prompt) {
-    resultDiv.innerHTML =
-      '<div class="error">กรุณาพิมพ์กลุ่มลูกค้าที่ต้องการก่อน</div>';
-    return;
-  }
-
-  resultDiv.innerHTML =
-    '<div class="result"><div class="name">✅ ปุ่ม AI ทำงานแล้ว</div><div class="info">กำลังเตรียมส่งคำถามไปยัง AI...</div></div>';
-});
-
-
+document.getElementById("aiButton").addEventListener("click", getAIInterests);
     
-function testAIButton() {
-  alert("TEST AI BUTTON ทำงานแล้ว");
-}
-
     async function searchInterest() {
 
       const keyword =
@@ -577,8 +559,8 @@ function exportCSV() {
       upper
     ]
       .map(value =>
-        "${String(value).replace(/"/g, '""')}"
-      )
+  "${String(value).replace(/"/g, '""')}"
+)
       .join(",");
 
   });
