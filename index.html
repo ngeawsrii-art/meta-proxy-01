@@ -523,31 +523,33 @@ const interests = text
   )
   .filter(item => item.length > 0)
   .filter(item => {
-    const lower = item.toLowerCase();
+    // ตัดรายการที่เป็น Location ออกโดยเด็ดขาด
+    if (/\(สถานที่\)/i.test(item)) {
+      return false;
+    }
 
-    // ตัด Location / สถานที่ออกโดยเด็ดขาด
+    if (/\b(location|thailand|bangkok|phang nga|phuket)\b/i.test(item)) {
+      return false;
+    }
+
     if (
-      lower.includes("ประเทศไทย") ||
-      lower.includes("ไทย") ||
-      lower.includes("thailand") ||
-      lower.includes("กรุงเทพ") ||
-      lower.includes("bangkok") ||
-      lower.includes("พังงา") ||
-      lower.includes("phang nga") ||
-      lower.includes("ภูเก็ต") ||
-      lower.includes("phuket") ||
-      lower.includes("สถานที่") ||
-      lower.includes("location") ||
-      lower.includes("จังหวัด") ||
-      lower.includes("ประเทศ") ||
-      lower.includes("อำเภอ")
+      item.includes("ประเทศไทย") ||
+      item.includes("ประเทศไทย") ||
+      item.includes("กรุงเทพ") ||
+      item.includes("พังงา") ||
+      item.includes("ภูเก็ต") ||
+      item.includes("จังหวัด") ||
+      item.includes("ประเทศ") ||
+      item.includes("อำเภอ") ||
+      item.includes("สถานที่") ||
+      item.includes("เมือง")
     ) {
       return false;
     }
 
     return true;
   });
-
+        
 if (interests.length === 0) {
 
   resultDiv.innerHTML =
