@@ -391,52 +391,45 @@
       }
 
     }
+async function getAIInterests() {
+  const prompt = document.getElementById("aiPrompt").value.trim();
+  const resultDiv = document.getElementById("aiResult");
+  const loadingDiv = document.getElementById("aiLoading");
 
-    async function getAIInterests() {
-
-  const prompt =
-    document.getElementById("keyword").value.trim();
-
-  const resultDiv =
-    document.getElementById("results");
+  resultDiv.innerHTML = "";
+  loadingDiv.innerText = "";
 
   if (!prompt) {
-    alert("กรุณาพิมพ์คำค้นหาก่อน");
+    resultDiv.innerHTML =
+      '<div class="error">กรุณาพิมพ์กลุ่มลูกค้าที่ต้องการก่อน</div>';
     return;
   }
 
-  resultDiv.innerHTML =
-    '<div class="loading">🤖 AI กำลังวิเคราะห์...</div>';
+  loadingDiv.innerText = "🤖 AI กำลังวิเคราะห์...";
 
   try {
-
     const response = await fetch("/api/gemini", {
-
       method: "POST",
-
       headers: {
         "Content-Type": "application/json"
       },
-
       body: JSON.stringify({
-
         prompt: `
 คุณเป็นผู้ช่วยแนะนำ Facebook Ad Interest
 
-คำค้นหาของผู้ใช้:
+กลุ่มลูกค้าที่ผู้ใช้ต้องการ:
 ${prompt}
 
-ธุรกิจที่รองรับ:
+ธุรกิจ:
 - ประกันชีวิต
 - ประกันอุบัติเหตุครอบครัว
 - ประกันรถยนต์
 - รีไฟแนนซ์รถ
 - สินเชื่อรถ
 
-งาน:
-แนะนำ Facebook Ad Interest ที่เกี่ยวข้องกับคำค้นหานี้ จำนวนไม่เกิน 10 รายการ
+แนะนำ Facebook Ad Interest ที่เกี่ยวข้อง ไม่เกิน 10 รายการ
 
-กฎสำคัญ:
+กฎ:
 - ตอบเฉพาะชื่อ Interest
 - 1 Interest ต่อ 1 บรรทัด
 - ห้ามใส่ตัวเลข
@@ -445,41 +438,34 @@ ${prompt}
 - ห้ามใส่เหตุผล
 - ห้ามใส่ประเทศ จังหวัด เมือง หรือสถานที่
 - ห้ามใส่อายุ เพศ หรืออาชีพ
-- ห้ามตอบ "ประเทศไทย"
-- ห้ามตอบ "Thailand"
-- ห้ามตอบ "กรุงเทพ"
-- ห้ามตอบ "พังงา"
-- ห้ามตอบ "ภูเก็ต"
+- ห้ามตอบประเทศไทย
+- ห้ามตอบ Thailand
+- ห้ามตอบกรุงเทพ
+- ห้ามตอบพังงา
+- ห้ามตอบภูเก็ต
 
-หากไม่แน่ใจว่าเป็น Facebook Ad Interest ที่เหมาะสม
-ให้ตัดรายการนั้นออก
-
-ตอบเฉพาะรายชื่อ Interest เท่านั้น
+ตอบเฉพาะรายชื่อ Interest
         `
-
       })
-
     });
 
     const data = await response.json();
 
-    if (!response.ok || data.error) {
+    loadingDiv.innerText = "";
 
+    if (!response.ok || data.error) {
       resultDiv.innerHTML =
         '<div class="error">เกิดข้อผิดพลาด: ' +
         escapeHtml(JSON.stringify(data.error)) +
         '</div>';
-
       return;
     }
 
     const text = data.text || "";
 
     if (!text) {
-
       resultDiv.innerHTML =
         '<div class="empty">AI ไม่พบ Interest</div>';
-
       return;
     }
 
@@ -504,9 +490,7 @@ ${prompt}
     const interests = text
       .split(/\r?\n/)
       .map(item =>
-        item
-          .replace(/^[-•*\d.)]+\s*/, "")
-          .trim()
+        item.replace(/^[-•*\d.)]+\s*/, "").trim()
       )
       .filter(item => item.length > 0)
       .filter(item =>
@@ -516,36 +500,27 @@ ${prompt}
       );
 
     if (interests.length === 0) {
-
       resultDiv.innerHTML =
         '<div class="empty">AI ไม่พบ Interest ที่เหมาะสม</div>';
-
       return;
     }
 
     resultDiv.innerHTML = `
       <div class="result">
-        <div class="name">
-          🤖 Interest ที่ AI แนะนำ
-        </div>
-
+        <div class="name">🤖 Interest ที่ AI แนะนำ</div>
         <div class="info">
-          ${interests
-            .map(item => escapeHtml(item))
-            .join("<br>")}
+          ${interests.map(item => escapeHtml(item)).join("<br>")}
         </div>
       </div>
     `;
 
   } catch (error) {
-
+    loadingDiv.innerText = "";
     resultDiv.innerHTML =
       '<div class="error">เกิดข้อผิดพลาด: ' +
       escapeHtml(error.message) +
       '</div>';
-
   }
-
 }
 
        
