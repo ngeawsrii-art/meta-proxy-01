@@ -252,8 +252,6 @@
   <script>
 
     let currentResults = [];
-
-document.getElementById("aiButton").addEventListener("click", getAIInterests);
     
     async function searchInterest() {
 
@@ -393,7 +391,7 @@ document.getElementById("aiButton").addEventListener("click", getAIInterests);
       }
 
     }
-async function getAIInterests() { alert("เข้า getAIInterests แล้ว");
+async function getAIInterests() { 
   const prompt = document.getElementById("aiPrompt").value.trim();
   const resultDiv = document.getElementById("aiResult");
   const loadingDiv = document.getElementById("aiLoading");
@@ -406,7 +404,7 @@ async function getAIInterests() { alert("เข้า getAIInterests แล้�
 
   resultDiv.innerHTML = "";
 loadingDiv.innerText = "🤖 AI กำลังวิเคราะห์...";
-alert("ถึงจุดก่อนเรียก API แล้ว");
+
   
   try {
     const response = await fetch("/api/gemini", {
