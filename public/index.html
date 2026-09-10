@@ -393,7 +393,7 @@ document.getElementById("aiButton").addEventListener("click", getAIInterests);
       }
 
     }
-async function getAIInterests() {
+async function getAIInterests() { alert("เข้า getAIInterests แล้ว");
   const prompt = document.getElementById("aiPrompt").value.trim();
   const resultDiv = document.getElementById("aiResult");
   const loadingDiv = document.getElementById("aiLoading");
