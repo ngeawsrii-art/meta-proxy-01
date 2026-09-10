@@ -414,40 +414,39 @@ async function getAIInterests() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        prompt: `
-คุณเป็นผู้ช่วยแนะนำ Facebook Ad Interest
-
-กลุ่มลูกค้าที่ผู้ใช้ต้องการ:
-${prompt}
-
-แนะนำ Facebook Ad Interest ที่เกี่ยวข้อง ไม่เกิน 10 รายการ
-
-ตอบเฉพาะชื่อ Interest
-1 Interest ต่อ 1 บรรทัด
-ห้ามใส่ตัวเลข
-ห้ามใส่ bullet
-ห้ามใส่คำอธิบาย
-ห้ามใส่เหตุผล
-ห้ามใส่ประเทศ จังหวัด เมือง หรือสถานที่
-        `
+        prompt: prompt
       })
     });
 
-    const data = await response.json();
+    const rawText = await response.text();
 
     loadingDiv.innerText = "";
 
+    let data;
+
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      resultDiv.innerHTML =
+        '<div class="error">API ตอบกลับไม่ใช่ JSON:<br>' +
+        escapeHtml(rawText) +
+        '</div>';
+      return;
+    }
+
     if (!response.ok) {
       resultDiv.innerHTML =
-        '<div class="error">API Error: ' +
-        escapeHtml(JSON.stringify(data.error || data)) +
+        '<div class="error">API Error:<br>' +
+        escapeHtml(JSON.stringify(data, null, 2)) +
         '</div>';
       return;
     }
 
     if (!data.text) {
       resultDiv.innerHTML =
-        '<div class="empty">AI ไม่ส่งผลลัพธ์กลับมา</div>';
+        '<div class="empty">AI ไม่ส่งผลลัพธ์กลับมา:<br>' +
+        escapeHtml(JSON.stringify(data, null, 2)) +
+        '</div>';
       return;
     }
 
@@ -466,8 +465,9 @@ ${prompt}
 
   } catch (error) {
     loadingDiv.innerText = "";
+
     resultDiv.innerHTML =
-      '<div class="error">เชื่อมต่อ AI ไม่สำเร็จ: ' +
+      '<div class="error">เชื่อมต่อ AI ไม่สำเร็จ:<br>' +
       escapeHtml(error.message) +
       '</div>';
   }
