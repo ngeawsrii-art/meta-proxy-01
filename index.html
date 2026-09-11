@@ -250,159 +250,145 @@
   </div>
 
   <script>
+let currentResults = [];
 
-    let currentResults = [];
+/* =========================
+   ค้นหา Facebook Interest
+========================= */
+async function searchInterest() {
 
+  const keywordEl = document.getElementById("keyword");
+  const limitEl = document.getElementById("limit");
+  const resultsDiv = document.getElementById("results");
+  const errorDiv = document.getElementById("error");
+  const loadingDiv = document.getElementById("loading");
 
-    async function searchInterest() {
+  const keyword = keywordEl.value.trim();
+  const limit = limitEl.value;
 
-      const keyword =
-        document.getElementById("keyword").value.trim();
+  resultsDiv.innerHTML = "";
+  errorDiv.innerHTML = "";
+  loadingDiv.innerText = "";
 
-      const limit =
-        document.getElementById("limit").value;
+  if (!keyword) {
+    errorDiv.innerText = "กรุณาใส่คำค้นหา";
+    return;
+  }
 
-      const resultsDiv =
-        document.getElementById("results");
+  loadingDiv.innerText = "กำลังค้นหา...";
 
-      const errorDiv =
-        document.getElementById("error");
+  try {
 
-      const loadingDiv =
-        document.getElementById("loading");
+    const response = await fetch(
+      /meta-interest?q=${encodeURIComponent(keyword)}&limit=${limit}
+    );
 
-      resultsDiv.innerHTML = "";
-      errorDiv.innerHTML = "";
+    const data = await response.json();
 
-      if (!keyword) {
-        errorDiv.innerText = "กรุณาใส่คำค้นหา";
-        return;
-      }
+    loadingDiv.innerText = "";
 
-      loadingDiv.innerText = "กำลังค้นหา...";
-
-      try {
-
-        const url =
-          `/meta-interest?q=${encodeURIComponent(keyword)}&limit=${limit}`;
-
-        const response = await fetch(url);
-
-        const data = await response.json();
-
-        loadingDiv.innerText = "";
-
-        if (data.error) {
-
-          errorDiv.innerText =
-            "เกิดข้อผิดพลาด: " +
-            JSON.stringify(data.error);
-
-          return;
-        }
-
-        if (!data.data || data.data.length === 0) {
-
-          currentResults = [];
-
-          resultsDiv.innerHTML =
-            '<div class="empty">ไม่พบ Interest ที่ค้นหา</div>';
-
-          return;
-        }
-
-        currentResults = data.data;
-
-        data.data.forEach(item => {
-
-          const name =
-            item.name || "ไม่ระบุชื่อ";
-
-          const id =
-            item.id || "ไม่ระบุ ID";
-
-          const path =
-            item.path && Array.isArray(item.path)
-              ? item.path.join(" › ")
-              : "ไม่ระบุหมวดหมู่";
-
-          const lower =
-            item.audience_size_lower_bound;
-
-          const upper =
-            item.audience_size_upper_bound;
-
-          let audience =
-            "ไม่ทราบขนาดกลุ่มเป้าหมาย";
-
-          if (lower != null && upper != null) {
-
-            audience =
-              `${lower.toLocaleString()} – ${upper.toLocaleString()} คน`;
-
-          }
-
-          const div =
-            document.createElement("div");
-
-          div.className = "result";
-
-          div.innerHTML = `
-
-            <div class="name">
-              ${escapeHtml(name)}
-            </div>
-
-            <div class="info">
-              <span class="label">🆔 Interest ID:</span>
-              ${escapeHtml(id)}
-            </div>
-
-            <div class="info">
-              <span class="label">📂 Path / หมวดหมู่:</span>
-              ${escapeHtml(path)}
-            </div>
-
-            <div class="info">
-              <span class="label">👥 Audience:</span>
-              ${audience}
-            </div>
-
-            <button
-              class="copy-btn"
-              onclick="copyInterest('${escapeAttribute(name)}', this)"
-            >
-              📋 คัดลอก Interest
-            </button>
-
-          `;
-
-          resultsDiv.appendChild(div);
-
-        });
-
-      } catch (error) {
-
-        loadingDiv.innerText = "";
-
-        errorDiv.innerText =
-          "ไม่สามารถเชื่อมต่อ API ได้: " +
-          error.message;
-
-      }
-
+    if (!response.ok || data.error) {
+      errorDiv.innerText =
+        "เกิดข้อผิดพลาด: " +
+        JSON.stringify(data.error || data);
+      return;
     }
 
-    async function getAIInterests() {
+    if (!data.data || data.data.length === 0) {
 
-  const prompt =
-  document.getElementById("aiPrompt").value.trim();
+      currentResults = [];
 
-  const resultDiv =
-    document.getElementById("results");
+      resultsDiv.innerHTML =
+        '<div class="empty">ไม่พบ Interest ที่ค้นหา</div>';
+
+      return;
+    }
+
+    currentResults = data.data;
+
+    data.data.forEach(item => {
+
+      const name = item.name || "ไม่ระบุชื่อ";
+      const id = item.id || "ไม่ระบุ ID";
+
+      const path =
+        Array.isArray(item.path)
+          ? item.path.join(" › ")
+          : "ไม่ระบุหมวดหมู่";
+
+      const lower = item.audience_size_lower_bound;
+      const upper = item.audience_size_upper_bound;
+
+      let audience = "ไม่ทราบขนาดกลุ่มเป้าหมาย";
+
+      if (lower != null && upper != null) {
+        audience =
+          `${Number(lower).toLocaleString()} – ${Number(upper).toLocaleString()} คน`;
+      }
+
+      const div = document.createElement("div");
+
+      div.className = "result";
+
+      div.innerHTML = `
+        <div class="name">
+          ${escapeHtml(name)}
+        </div>
+
+        <div class="info">
+          <span class="label">🆔 Interest ID:</span>
+          ${escapeHtml(id)}
+        </div>
+
+        <div class="info">
+          <span class="label">📂 Path / หมวดหมู่:</span>
+          ${escapeHtml(path)}
+        </div>
+
+        <div class="info">
+          <span class="label">👥 Audience:</span>
+          ${audience}
+        </div>
+
+        <button type="button" class="copy-btn">
+          📋 คัดลอก Interest
+        </button>
+      `;
+
+      const copyBtn = div.querySelector(".copy-btn");
+
+      copyBtn.addEventListener("click", () => {
+        copyInterest(name, copyBtn);
+      });
+
+      resultsDiv.appendChild(div);
+
+    });
+
+  } catch (error) {
+
+    loadingDiv.innerText = "";
+
+    errorDiv.innerText =
+      "ไม่สามารถเชื่อมต่อ API ได้: " +
+      error.message;
+  }
+}
+
+
+/* =========================
+   AI แนะนำ Interest
+========================= */
+async function getAIInterests() {
+
+  const promptEl = document.getElementById("aiPrompt");
+  const resultDiv = document.getElementById("results");
+
+  const prompt = promptEl.value.trim();
 
   if (!prompt) {
-    alert("กรุณาพิมพ์คำค้นหาก่อน");
+    resultDiv.innerHTML =
+      '<div class="error">กรุณาพิมพ์กลุ่มลูกค้าที่ต้องการก่อน</div>';
     return;
   }
 
@@ -435,9 +421,10 @@ ${prompt}
 - สินเชื่อรถ
 
 งาน:
-แนะนำ Facebook Ad Interest ที่เกี่ยวข้องกับคำค้นหานี้ จำนวนไม่เกิน 10 รายการ
+แนะนำ Facebook Ad Interest ที่เกี่ยวข้องกับคำค้นหานี้
+จำนวนไม่เกิน 10 รายการ
 
-กฎสำคัญ:
+กฎ:
 - ตอบเฉพาะชื่อ Interest
 - 1 Interest ต่อ 1 บรรทัด
 - ห้ามใส่ตัวเลข
@@ -446,18 +433,17 @@ ${prompt}
 - ห้ามใส่เหตุผล
 - ห้ามใส่ประเทศ จังหวัด เมือง หรือสถานที่
 - ห้ามใส่อายุ เพศ หรืออาชีพ
-- ห้ามตอบ "ประเทศไทย"
-- ห้ามตอบ "Thailand"
-- ห้ามตอบ "กรุงเทพ"
-- ห้ามตอบ "พังงา"
-- ห้ามตอบ "ภูเก็ต"
+- ห้ามตอบประเทศไทย
+- ห้ามตอบ Thailand
+- ห้ามตอบกรุงเทพ
+- ห้ามตอบพังงา
+- ห้ามตอบภูเก็ต
 
-หากไม่แน่ใจว่าเป็น Facebook Ad Interest ที่เหมาะสม
+หากไม่แน่ใจว่าเป็น Facebook Ad Interest
 ให้ตัดรายการนั้นออก
 
 ตอบเฉพาะรายชื่อ Interest เท่านั้น
         `
-
       })
 
     });
@@ -468,7 +454,7 @@ ${prompt}
 
       resultDiv.innerHTML =
         '<div class="error">เกิดข้อผิดพลาด: ' +
-        escapeHtml(JSON.stringify(data.error)) +
+        escapeHtml(JSON.stringify(data.error || data)) +
         '</div>';
 
       return;
@@ -509,12 +495,13 @@ ${prompt}
           .replace(/^[-•*\d.)]+\s*/, "")
           .trim()
       )
-      .filter(item => item.length > 0)
+      .filter(Boolean)
       .filter(item =>
         !forbiddenWords.some(word =>
           item.toLowerCase().includes(word.toLowerCase())
         )
-      );
+      )
+      .slice(0, 10);
 
     if (interests.length === 0) {
 
@@ -526,6 +513,7 @@ ${prompt}
 
     resultDiv.innerHTML = `
       <div class="result">
+
         <div class="name">
           🤖 Interest ที่ AI แนะนำ
         </div>
@@ -535,6 +523,7 @@ ${prompt}
             .map(item => escapeHtml(item))
             .join("<br>")}
         </div>
+
       </div>
     `;
 
@@ -546,11 +535,13 @@ ${prompt}
       '</div>';
 
   }
-
 }
 
-       
-    async function copyInterest(name, button) {
+
+/* =========================
+   คัดลอก Interest
+========================= */
+async function copyInterest(name, button) {
 
   try {
 
@@ -569,16 +560,17 @@ ${prompt}
     alert("ไม่สามารถคัดลอกได้");
 
   }
-
 }
 
 
+/* =========================
+   คัดลอกทั้งหมด
+========================= */
 function copyAllInterests() {
 
   if (!currentResults || currentResults.length === 0) {
 
     alert("ยังไม่มี Interest ให้คัดลอก");
-
     return;
 
   }
@@ -594,16 +586,17 @@ function copyAllInterests() {
     .catch(() => {
       alert("ไม่สามารถคัดลอกได้");
     });
-
 }
 
 
+/* =========================
+   Export CSV
+========================= */
 function exportCSV() {
 
   if (!currentResults || currentResults.length === 0) {
 
     alert("ยังไม่มีข้อมูลให้ดาวน์โหลด");
-
     return;
 
   }
@@ -614,11 +607,10 @@ function exportCSV() {
   const rows = currentResults.map(item => {
 
     const id = item.id || "";
-
     const name = item.name || "";
 
     const path =
-      item.path && Array.isArray(item.path)
+      Array.isArray(item.path)
         ? item.path.join(" > ")
         : "";
 
@@ -629,16 +621,17 @@ function exportCSV() {
       item.audience_size_upper_bound ?? "";
 
     return [
-  id,
-  name,
-  path,
-  lower,
-  upper
-]
-  .map(value =>
-    "${String(value).replace(/"/g, '""')}"
-  )
-  .join(",");
+      id,
+      name,
+      path,
+      lower,
+      upper
+    ]
+      .map(value =>
+        "${String(value).replace(/"/g, '""')}"
+      )
+      .join(",");
+
   });
 
   const csv =
@@ -647,10 +640,10 @@ function exportCSV() {
     "\n" +
     rows.join("\n");
 
-  const blob =
-    new Blob([csv], {
-      type: "text/csv;charset=utf-8;"
-    });
+  const blob = new Blob(
+    [csv],
+    { type: "text/csv;charset=utf-8;" }
+  );
 
   const url =
     URL.createObjectURL(blob);
@@ -659,9 +652,7 @@ function exportCSV() {
     document.createElement("a");
 
   link.href = url;
-
-  link.download =
-    "facebook-interest-results.csv";
+  link.download = "facebook-interest-results.csv";
 
   document.body.appendChild(link);
 
@@ -670,10 +661,12 @@ function exportCSV() {
   document.body.removeChild(link);
 
   URL.revokeObjectURL(url);
-
 }
 
 
+/* =========================
+   ป้องกัน HTML injection
+========================= */
 function escapeHtml(value) {
 
   return String(value)
@@ -686,22 +679,43 @@ function escapeHtml(value) {
 }
 
 
-function escapeAttribute(value) {
-
-  return String(value)
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'")
-    .replace(/"/g, "&quot;");
-
-}
-    window.searchInterest = searchInterest;
+/* =========================
+   ทำให้ฟังก์ชันเรียกได้จาก HTML
+========================= */
+window.searchInterest = searchInterest;
 window.getAIInterests = getAIInterests;
 window.copyInterest = copyInterest;
 window.copyAllInterests = copyAllInterests;
 window.exportCSV = exportCSV;
 
-    document.getElementById("searchBtn").addEventListener("click", searchInterest);
-document.getElementById("aiBtn").addEventListener("click", getAIInterests);
+
+/* =========================
+   ผูกปุ่มโดยตรง
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+
+  const searchBtn =
+    document.getElementById("searchBtn");
+
+  const aiBtn =
+    document.getElementById("aiBtn");
+
+  if (searchBtn) {
+    searchBtn.addEventListener(
+      "click",
+      searchInterest
+    );
+  }
+
+  if (aiBtn) {
+    aiBtn.addEventListener(
+      "click",
+      getAIInterests
+    );
+  }
+
+});
+</script>
       </script>
 
 </body>
