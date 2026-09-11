@@ -628,7 +628,7 @@ function exportCSV() {
       upper
     ]
       .map(value =>
-        "${String(value).replace(/"/g, '""')}"
+        `"${String(value).replace(/"/g, '""')}"`
       )
       .join(",");
 
