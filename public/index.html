@@ -393,9 +393,13 @@ async function getAIInterests() {
   }
 
   resultDiv.innerHTML =
-    '<div class="loading">🤖 AI กำลังวิเคราะห์...</div>';
+    '<div class="loading">🤖 AI กำลังวิเคราะห์และตรวจสอบ Facebook Interest...</div>';
 
   try {
+
+    // =========================
+    // 1. ให้ Gemini แนะนำ Interest
+    // =========================
 
     const response = await fetch("/api/gemini", {
 
@@ -439,8 +443,8 @@ ${prompt}
 - ห้ามตอบพังงา
 - ห้ามตอบภูเก็ต
 
-หากไม่แน่ใจว่าเป็น Facebook Ad Interest
-ให้ตัดรายการนั้นออก
+พยายามใช้ชื่อ Interest ที่มีแนวโน้มเป็น Facebook Ad Interest จริง
+หากไม่แน่ใจ ให้ตัดรายการนั้นออก
 
 ตอบเฉพาะรายชื่อ Interest เท่านั้น
         `
@@ -470,6 +474,11 @@ ${prompt}
       return;
     }
 
+
+    // =========================
+    // 2. ทำความสะอาดรายชื่อ
+    // =========================
+
     const forbiddenWords = [
       "ประเทศไทย",
       "ไทย",
@@ -488,7 +497,7 @@ ${prompt}
       "Location"
     ];
 
-    const interests = text
+    const aiInterests = text
       .split(/\r?\n/)
       .map(item =>
         item
@@ -503,7 +512,8 @@ ${prompt}
       )
       .slice(0, 10);
 
-    if (interests.length === 0) {
+
+    if (aiInterests.length === 0) {
 
       resultDiv.innerHTML =
         '<div class="empty">AI ไม่พบ Interest ที่เหมาะสม</div>';
@@ -511,20 +521,177 @@ ${prompt}
       return;
     }
 
+
+    // =========================
+    // 3. เอา Interest ไปค้น Facebook
+    // =========================
+
+    const facebookResults = await Promise.all(
+
+      aiInterests.map(async (interest) => {
+
+        try {
+
+          const fbResponse = await fetch(
+            "/api/meta-interest?q=" +
+            encodeURIComponent(interest) +
+            "&limit=10"
+          );
+
+          const fbData = await fbResponse.json();
+
+          if (!fbResponse.ok || fbData.error) {
+            return {
+              aiName: interest,
+              found: false,
+              results: []
+            };
+          }
+
+          return {
+            aiName: interest,
+            found: true,
+            results: fbData.data || []
+          };
+
+        } catch (error) {
+
+          return {
+            aiName: interest,
+            found: false,
+            results: []
+          };
+
+        }
+
+      })
+
+    );
+
+
+    // =========================
+    // 4. รวมผลที่ Facebook พบ
+    // =========================
+
+    const verifiedResults = [];
+
+    facebookResults.forEach(item => {
+
+      if (!item.results || item.results.length === 0) {
+        return;
+      }
+
+      // พยายามหาชื่อที่ตรงกับ AI มากที่สุดก่อน
+      const exactMatch = item.results.find(result =>
+        result.name &&
+        result.name.toLowerCase() === item.aiName.toLowerCase()
+      );
+
+      const bestResult = exactMatch || item.results[0];
+
+      verifiedResults.push({
+        aiName: item.aiName,
+        ...bestResult
+      });
+
+    });
+
+
+    // =========================
+    // 5. แสดงผล
+    // =========================
+
+    if (verifiedResults.length === 0) {
+
+      resultDiv.innerHTML = `
+        <div class="result">
+
+          <div class="name">
+            🤖 AI แนะนำ Interest
+          </div>
+
+          <div class="empty">
+            AI แนะนำมาแล้ว แต่ Facebook ไม่พบ Interest เหล่านี้
+          </div>
+
+        </div>
+      `;
+
+      return;
+    }
+
+
     resultDiv.innerHTML = `
+
       <div class="result">
 
         <div class="name">
-          🤖 Interest ที่ AI แนะนำ
+          🤖 AI แนะนำ + ตรวจสอบ Facebook แล้ว
         </div>
 
         <div class="info">
-          ${interests
-            .map(item => escapeHtml(item))
-            .join("<br>")}
+
+          ${verifiedResults.map((item, index) => {
+
+            const audience =
+              item.audience_size_lower_bound != null &&
+              item.audience_size_upper_bound != null
+                ? Number(item.audience_size_lower_bound).toLocaleString() +
+                  " – " +
+                  Number(item.audience_size_upper_bound).toLocaleString()
+                : "ไม่พบข้อมูล";
+
+            const path =
+              Array.isArray(item.path)
+                ? item.path.join(" > ")
+                : "ไม่พบ Path";
+
+            return `
+
+              <div class="interest-card">
+
+                <div class="interest-number">
+                  ${index + 1}. ${escapeHtml(item.name || item.aiName)}
+                </div>
+
+                <div>
+                  <strong>AI แนะนำ:</strong>
+                  ${escapeHtml(item.aiName)}
+                </div>
+
+                <div>
+                  <strong>Interest ID:</strong>
+                  ${escapeHtml(item.id || "-")}
+                </div>
+
+                <div>
+                  <strong>Audience:</strong>
+                  ${escapeHtml(audience)}
+                </div>
+
+                <div>
+                  <strong>Path:</strong>
+                  ${escapeHtml(path)}
+                </div>
+
+                <button
+                  type="button"
+                  class="search-btn"
+                  onclick="copyInterest('${escapeHtml(item.name || item.aiName)}', this)"
+                >
+                  📋 คัดลอก Interest
+                </button>
+
+              </div>
+
+            `;
+
+          }).join("")}
+
         </div>
 
       </div>
+
     `;
 
   } catch (error) {
@@ -535,6 +702,7 @@ ${prompt}
       '</div>';
 
   }
+
 }
 
 
