@@ -280,7 +280,7 @@ async function searchInterest() {
   try {
 
     const response = await fetch(
-      /meta-interest?q=${encodeURIComponent(keyword)}&limit=${limit}
+      `/meta-interest?q=${encodeURIComponent(keyword)}&limit=${limit}`
     );
 
     const data = await response.json();
