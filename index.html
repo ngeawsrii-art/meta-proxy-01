@@ -195,7 +195,7 @@
       <option value="30">30 รายการ</option>
     </select>
 
-    <button class="search-btn" onclick="searchInterest()">
+    <button type="button" id="searchBtn" class="search-btn">
       🔎 ค้นหา Interest
     </button>
 
@@ -213,9 +213,10 @@
       ></textarea>
 
       <button
-        class="search-btn"
-        onclick="getAIInterests()"
-      >
+  type="button"
+  id="aiBtn"
+  class="search-btn"
+>
         🤖 ให้ AI แนะนำ Interest
       </button>
 
@@ -698,6 +699,9 @@ window.getAIInterests = getAIInterests;
 window.copyInterest = copyInterest;
 window.copyAllInterests = copyAllInterests;
 window.exportCSV = exportCSV;
+
+    document.getElementById("searchBtn").addEventListener("click", searchInterest);
+document.getElementById("aiBtn").addEventListener("click", getAIInterests);
       </script>
 
 </body>
