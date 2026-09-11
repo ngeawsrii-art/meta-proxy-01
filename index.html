@@ -628,17 +628,16 @@ function exportCSV() {
       item.audience_size_upper_bound ?? "";
 
     return [
-      id,
-      name,
-      path,
-      lower,
-      upper
-    ]
-      .map(value =>
-        "${String(value).replace(/"/g, '""')}"
-      )
-      .join(",");
-
+  id,
+  name,
+  path,
+  lower,
+  upper
+]
+  .map(value =>
+    "${String(value).replace(/"/g, '""')}"
+  )
+  .join(",");
   });
 
   const csv =
