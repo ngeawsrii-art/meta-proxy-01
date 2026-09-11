@@ -669,22 +669,38 @@ Fiat Automobiles
 
     if (verifiedResults.length === 0) {
 
-      resultDiv.innerHTML = `
-        <div class="result">
+  resultDiv.innerHTML = `
+    <div class="result">
 
-          <div class="name">
-            🤖 AI แนะนำ Interest
+      <div class="name">
+        🤖 AI แนะนำ Interest
+      </div>
+
+      <div class="info">
+
+        ${aiInterests.map((interest, index) => `
+
+          <div class="interest-card">
+
+            <div class="interest-number">
+              ${index + 1}. ${escapeHtml(interest)}
+            </div>
+
+            <div class="error">
+              ❌ Facebook ไม่พบ Interest นี้
+            </div>
+
           </div>
 
-          <div class="empty">
-            AI แนะนำมาแล้ว แต่ Facebook ไม่พบ Interest เหล่านี้
-          </div>
+        `).join("")}
 
-        </div>
-      `;
+      </div>
 
-      return;
-    }
+    </div>
+  `;
+
+  return;
+}
 
 
     resultDiv.innerHTML = `
