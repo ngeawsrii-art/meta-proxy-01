@@ -650,33 +650,56 @@ Fiat Automobiles
 
 
     // =========================
-    // 4. รวมผลที่ Facebook พบ
-    // =========================
+// 4. รวมผลที่ Facebook พบ
+// =========================
 
-    const verifiedResults = [];
+// ใช้ Map เพื่อป้องกัน Interest ID ซ้ำ
+const verifiedMap = new Map();
 
-    facebookResults.forEach(item => {
+facebookResults.forEach(item => {
 
-      if (!item.results || item.results.length === 0) {
-        return;
-      }
+  if (!item.results || item.results.length === 0) {
+    return;
+  }
 
-      // พยายามหาชื่อที่ตรงกับ AI มากที่สุดก่อน
-      const exactMatch = item.results.find(result =>
-        result.name &&
-        result.name.toLowerCase() === item.aiName.toLowerCase()
-      );
+  // พยายามหาชื่อที่ตรงกับ AI มากที่สุดก่อน
+  const exactMatch = item.results.find(result =>
+    result.name &&
+    result.name.toLowerCase() === item.aiName.toLowerCase()
+  );
 
-      const bestResult = exactMatch || item.results[0];
+  const bestResult = exactMatch || item.results[0];
 
-      verifiedResults.push({
-        aiName: item.aiName,
-        ...bestResult
-      });
+  const interestId = bestResult.id;
 
+  if (!interestId) {
+    return;
+  }
+
+  // ถ้า Interest ID นี้มีอยู่แล้ว
+  if (verifiedMap.has(interestId)) {
+
+    const existing = verifiedMap.get(interestId);
+
+    // รวมชื่อ AI ที่แนะนำเข้าด้วยกัน
+    if (!existing.aiNames.includes(item.aiName)) {
+      existing.aiNames.push(item.aiName);
+    }
+
+  } else {
+
+    // Interest ID นี้ยังไม่เคยพบ
+    verifiedMap.set(interestId, {
+      ...bestResult,
+      aiNames: [item.aiName]
     });
 
+  }
 
+});
+
+const verifiedResults = Array.from(verifiedMap.values());
+    
     // =========================
     // 5. แสดงผล
     // =========================
@@ -752,7 +775,7 @@ Fiat Automobiles
 
                 <div>
                   <strong>AI แนะนำ:</strong>
-                  ${escapeHtml(item.aiName)}
+                  ${escapeHtml(item.aiNames.join(" / "))}
                 </div>
 
                 <div>
